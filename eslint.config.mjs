@@ -10,7 +10,15 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...compat.extends("next/core-web-vitals", "next/typescript", "prettier"),
+  {
+    rules: {
+      'max-lines-per-function': [
+      'error',
+      { max: 70, skipBlankLines: true, skipComments: true },
+    ],
+    }
+  }
 ];
 
 export default eslintConfig;
