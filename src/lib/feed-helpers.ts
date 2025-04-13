@@ -24,10 +24,11 @@ export async function fetchFeed(
   return response.json();
 }
 
-export function createFeed(rssFeed: RSSFeed): Feed {
+export function createFeed(rssFeed: RSSFeed, feedUrl: string): Feed {
   return {
     ...rssFeed,
     id: generateId(),
+    feedUrl: feedUrl,
     lastUpdated: new Date(),
     unreadCount: rssFeed.items.length,
   };

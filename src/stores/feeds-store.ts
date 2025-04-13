@@ -47,8 +47,7 @@ export const useFeedsStore = create<FeedsState>()(
             });
             return null;
           }
-
-          const newFeed = createFeed(rssFeed);
+          const newFeed = createFeed(rssFeed, url);
 
           // Add it to our feeds list
           set((state) => ({
@@ -93,7 +92,7 @@ export const useFeedsStore = create<FeedsState>()(
         set({ isLoading: true, error: null });
 
         try {
-          const { feed: rssFeed } = await fetchFeed(feedToRefresh.link);
+          const { feed: rssFeed } = await fetchFeed(feedToRefresh.feedUrl);
 
           // Update the feed with new data
           set((state) => ({
