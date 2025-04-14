@@ -11,7 +11,7 @@ interface FeedsState {
 
   // Feed actions
   addFeed: (url: string) => Promise<Feed | null>;
-  updateFeed: (id: string, feedData: Partial<Feed>) => void;
+  updateFeed: (id: string, feedData: Partial<Feed>) => Promise<void>;
   removeFeed: (id: string) => void;
   refreshFeed: (id: string) => Promise<void>;
   refreshAllFeeds: () => Promise<void>;
@@ -67,12 +67,77 @@ export const useFeedsStore = create<FeedsState>()(
       },
 
       // Update an existing feed
-      updateFeed: (id: string, feedData: Partial<Feed>) => {
-        set((state) => ({
-          feeds: state.feeds.map((feed) =>
-            feed.id === id ? { ...feed, ...feedData } : feed
-          ),
-        }));
+      updateFeed: async (id: string, feedData: Partial<Feed>) => {
+        const currentFeeds = get().feeds;
+        const feedToUpdate = currentFeeds.find((feed) => feed.id === id);
+
+        if (!feedToUpdate) {
+          set({
+            error: `Feed with ID "${id}" not found.`,
+            isLoading: false,
+          });
+          return;
+        }
+
+        const newUrl = feedData.feedUrl;
+        const isUrlChanging = newUrl && newUrl !== feedToUpdate.feedUrl;
+
+        if (isUrlChanging) {
+          set({ isLoading: true, error: null });
+          const duplicateFeed = currentFeeds.find(
+            (feed) => feed.id !== id && feed.feedUrl === newUrl
+          );
+
+          if (duplicateFeed) {
+            set({
+              error: `Feed "${feedData.title}" already exists.`,
+              isLoading: false,
+            });
+            return;
+          }
+
+          try {
+            const { feed: rssFeed } = await fetchFeed(newUrl);
+            console.log(" updateFeed: rssFeed:", rssFeed);
+
+            set((state) => ({
+              feeds: state.feeds.map((feed) =>
+                feed.id === id
+                  ? {
+                      id: feed.id,
+                      ...rssFeed,
+                      unreadCount: rssFeed.items.length,
+                      feedUrl: newUrl,
+                      lastUpdated: new Date(),
+                      ...Object.fromEntries(
+                        Object.entries(feedData).filter(
+                          ([key]) => key !== "feedUrl"
+                        )
+                      ),
+                    }
+                  : feed
+              ),
+              isLoading: false,
+              error: null, // Clear error on success
+            }));
+          } catch (error) {
+            set({
+              error:
+                error instanceof Error
+                  ? error.message
+                  : `Failed to fetch feed from new URL: ${newUrl}`,
+              isLoading: false,
+            });
+            return;
+          }
+        } else {
+          set((state) => ({
+            feeds: state.feeds.map((feed) =>
+              feed.id === id ? { ...feed, ...feedData } : feed
+            ),
+            error: null,
+          }));
+        }
       },
 
       // Remove a feed
