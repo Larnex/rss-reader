@@ -42,7 +42,7 @@ export function FeedItem({ feed, onEditAction }: FeedItemProps) {
             <span className="absolute right-0 opacity-100 group-hover/menu-item:opacity-0 transition-opacity duration-250">
               <UnreadCount count={feed.unreadCount} />
             </span>
-            <div className="opacity-0 group-hover/menu-item:opacity-100 transition-opacity duration-250">
+            <div className="opacity-0 group-hover/menu-item:opacity-100 transition-opacity duration-250 z-50 cursor-pointer">
               <FeedItemActions
                 onEditAction={() => onEditAction(feed)}
                 onDeleteAction={() => setShowDeleteConfirm(true)}
@@ -89,7 +89,7 @@ function FeedItemActions({
       <Button
         variant="ghost"
         size="icon"
-        className="h-6 w-6"
+        className="h-6 w-6 cursor-pointer"
         onClick={(e) => {
           e.stopPropagation();
           onEditAction();
@@ -100,7 +100,7 @@ function FeedItemActions({
       <Button
         variant="ghost"
         size="icon"
-        className="h-6 w-6 text-destructive"
+        className="h-6 w-6 text-destructive cursor-pointer"
         onClick={(e) => {
           e.stopPropagation();
           onDeleteAction();
