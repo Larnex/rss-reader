@@ -2,11 +2,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Article, RSSItem } from "@/types/rss";
-import { generateId } from "@/lib/feed-helpers";
 import {
   articleMatchesSearch,
-  extractImageUrl,
   sortArticlesByDate,
+  transformRSSItemToArticle,
 } from "@/lib/article-helpers";
 
 export type ArticleFilter = {
@@ -63,39 +62,7 @@ export const useArticlesStore = create<ArticlesState>()(
                 a.link === article.link
             );
 
-            if (existingArticle) {
-              return {
-                ...existingArticle,
-                title: article.title,
-                description: article.description,
-                pubDate: article.pubDate,
-                content: article.content,
-                contentSnippet: article.contentSnippet,
-                author: article.creator,
-                categories: article.categories,
-                guid: article.guid,
-                isoDate: article.isoDate,
-              };
-            }
-
-            return {
-              id: generateId(),
-              feedId,
-              title: article.title,
-              link: article.link,
-              description: article.description,
-              pubDate: article.pubDate,
-              content: article.content,
-              contentSnippet: article.contentSnippet,
-              author: article.creator,
-              categories: article.categories,
-              guid: article.guid,
-              isoDate: article.isoDate,
-              readLater: false,
-              read: false,
-              favorite: false,
-              imageUrl: extractImageUrl(article),
-            };
+            return transformRSSItemToArticle(article, feedId, existingArticle);
           });
 
           const otherArticles = state.articles.filter(
