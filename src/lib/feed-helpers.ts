@@ -35,19 +35,7 @@ export function createFeed(rssFeed: RSSFeed, feedUrl: string): Feed {
 }
 
 export const defaultFeeds = [
-  {
-    title: "NASA Breaking News",
-    url: "https://www.nasa.gov/rss/dyn/breaking_news.rss",
-    description: "A RSS feed containing the latest NASA breaking news",
-  },
-  {
-    title: "HackerNews",
-    url: "https://news.ycombinator.com/rss",
-    description: "Latest posts from Hacker News",
-  },
-  {
-    title: "BBC World News",
-    url: "http://feeds.bbci.co.uk/news/world/rss.xml",
-    description: "BBC World News",
-  },
+  "https://www.nasa.gov/rss/dyn/breaking_news.rss",
+  "https://bookriot.com/feed",
+  "http://pitchfork.com/rss/news",
 ];
