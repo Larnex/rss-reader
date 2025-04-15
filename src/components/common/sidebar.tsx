@@ -26,6 +26,7 @@ import { FeedsList } from "../feed/feed-list";
 import { Feed } from "@/types/rss";
 import { FeedForm } from "../feed/feed-form";
 import { Button } from "../ui/button";
+import { useArticlesStore } from "@/stores/articles-store";
 
 const NAV_ITEMS = [
   { icon: HomeIcon, label: "All Articles", active: true },
@@ -107,6 +108,13 @@ interface MainNavigationProps {
 }
 
 function MainNavigation({ items }: MainNavigationProps) {
+  const {
+    getArticlesLength,
+    getFavoritesCount,
+    getUnreadCount,
+    getReadLaterCount,
+  } = useArticlesStore();
+
   return (
     <SidebarMenu>
       {items.map((item) => (
@@ -116,7 +124,18 @@ function MainNavigation({ items }: MainNavigationProps) {
           tooltip={item.label}
         >
           <item.icon />
-          <span>{item.label}</span>
+          <div className="flex items-center justify-between w-full">
+            <span>{item.label}</span>
+            <span className="ml-auto text-xs bg-primary/10 text-primary py-0.5 px-2 rounded-full">
+              {item.label === "All Articles"
+                ? getArticlesLength()
+                : item.label === "Unread"
+                ? getUnreadCount()
+                : item.label === "Favorites"
+                ? getFavoritesCount()
+                : getReadLaterCount()}
+            </span>
+          </div>
         </SidebarMenuButton>
       ))}
     </SidebarMenu>

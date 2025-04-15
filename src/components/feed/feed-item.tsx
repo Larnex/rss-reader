@@ -37,10 +37,12 @@ export function FeedItem({ feed, onEditAction }: FeedItemProps) {
         <span className="flex-1 min-w-0 truncate whitespace-nowrap overflow-hidden">
           {feed.title}
         </span>
-        {feed.unreadCount > 0 && (
+        {feed.items.length > 0 && (
           <div className="ml-auto flex relative">
             <span className="absolute right-0 opacity-100 group-hover/menu-item:opacity-0 transition-opacity duration-250">
-              <UnreadCount count={feed.unreadCount} />
+              <span className="ml-auto text-xs bg-primary/10 text-primary py-0.5 px-2 rounded-full">
+                {feed.items.length}
+              </span>
             </span>
             <div className="opacity-0 group-hover/menu-item:opacity-100 transition-opacity duration-250 z-50 cursor-pointer">
               <FeedItemActions
@@ -61,20 +63,6 @@ export function FeedItem({ feed, onEditAction }: FeedItemProps) {
     </div>
   );
 }
-
-interface UnreadCountProps {
-  count: number;
-}
-
-function UnreadCount({ count }: UnreadCountProps) {
-  return (
-    <span className="ml-auto text-xs bg-primary/10 text-primary py-0.5 px-2 rounded-full">
-      {count}
-    </span>
-  );
-}
-
-// Component for feed item actions (edit/delete)
 interface FeedItemActionsProps {
   onEditAction: () => void;
   onDeleteAction: () => void;
