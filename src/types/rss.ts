@@ -17,7 +17,7 @@ export interface RSSItem {
   contentSnippet?: string;
   "content:encoded"?: string;
   "content:encodedSnippet"?: string;
-  author?: string;
+  creator?: string;
   categories?: string[];
   enclosure?: {
     url: string;
@@ -42,4 +42,5 @@ export interface Article extends Omit<RSSItem, "enclosure"> {
   favorite: boolean;
   readLater: boolean;
   imageUrl?: string;
+  author?: string;
 }

@@ -8,7 +8,6 @@ export function extractImageUrl(article: RSSItem): string | undefined {
       "text/html"
     );
     const img = doc.querySelector("img");
-    console.log(" extractImageUrl img:", img);
     if (img) {
       return img.src;
     }
@@ -25,17 +24,16 @@ export function sortArticlesByDate(articles: Article[]) {
   });
 }
 
-export function articleMatchesSearch(article: Article, query: string): boolean {
-  const searchTerms = query.toLowerCase().trim().split(/\s+/);
-  const searchableText = [
-    article.title,
-    article.description,
-    article.contentSnippet,
-    article.author,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+export function articleMatchesSearch(
+  article: Article,
+  searchQuery: string
+): boolean {
+  if (!searchQuery.trim()) return true;
 
-  return searchTerms.every((term) => searchableText.includes(term));
+  const query = searchQuery.toLowerCase();
+
+  // Search in title
+  if (article.title?.toLowerCase().includes(query)) return true;
+
+  return false;
 }

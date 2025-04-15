@@ -71,7 +71,7 @@ export const useArticlesStore = create<ArticlesState>()(
                 pubDate: article.pubDate,
                 content: article.content,
                 contentSnippet: article.contentSnippet,
-                author: article.author,
+                author: article.creator,
                 categories: article.categories,
                 guid: article.guid,
                 isoDate: article.isoDate,
@@ -87,7 +87,7 @@ export const useArticlesStore = create<ArticlesState>()(
               pubDate: article.pubDate,
               content: article.content,
               contentSnippet: article.contentSnippet,
-              author: article.author,
+              author: article.creator,
               categories: article.categories,
               guid: article.guid,
               isoDate: article.isoDate,
@@ -179,6 +179,11 @@ export const useArticlesStore = create<ArticlesState>()(
 
             // Filter by favorite status
             if (filter.onlyFavorites && !article.favorite) {
+              return false;
+            }
+
+            // Filter by read later status
+            if (filter.onlyReadLater && !article.readLater) {
               return false;
             }
 

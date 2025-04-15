@@ -54,7 +54,14 @@ export function ArticleCard({ article }: ArticleCardProps) {
             <span>{formattedDate}</span>
           </div>
 
-          <p className="text-xs text-muted-foreground line-clamp-6">
+          {article.author && (
+            <div className="flex items-center text-xs text-muted-foreground mb-2">
+              <span className="mr-1">By</span>
+              <span className="font-medium">{article.author}</span>
+            </div>
+          )}
+
+          <p className="text-xs text-muted-foreground line-clamp-5">
             {article.contentSnippet || article.description}
           </p>
         </div>
@@ -104,7 +111,7 @@ function ArticleFooter({
     <div className="flex items-center justify-between px-4 py-2 border-t bg-muted/20">
       <button
         className={cn(
-          "p-1 rounded-full hover:bg-muted",
+          "rounded-full hover:bg-muted",
           article.readLater ? "text-blue-500" : "text-muted-foreground"
         )}
         onClick={onToggleReadLater}
