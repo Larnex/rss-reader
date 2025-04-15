@@ -82,3 +82,21 @@ export function transformRSSItemToArticle(
     imageUrl: extractImageUrl(article),
   };
 }
+
+export function processHtml(html: string | undefined): string | undefined {
+  if (!html) return undefined;
+
+  const doc = new DOMParser().parseFromString(html, "text/html");
+
+  const links = doc.querySelectorAll("a");
+
+  links.forEach((link) => {
+    link.setAttribute("target", "_blank");
+    link.setAttribute("rel", "noopener noreferrer"); // Security best practice
+  });
+
+  const svgsToRemove = doc.querySelectorAll('svg[fill="none"]');
+  svgsToRemove.forEach((svg) => svg.remove());
+
+  return doc.body.innerHTML;
+}
