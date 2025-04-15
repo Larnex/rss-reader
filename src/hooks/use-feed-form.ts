@@ -76,26 +76,26 @@ export function useFeedForm({
 
     try {
       if (isEditMode && feedToEdit) {
-        try {
-          await updateFeed(feedToEdit.id, { feedUrl: values.url });
+        await updateFeed(feedToEdit.id, {
+          feedUrl: values.url,
+        });
+        const storeError = useFeedsStore.getState().error;
 
+        if (!storeError) {
           setSuccess(`Successfully updated "${feedToEdit.title}"`);
           setError(null);
           setIsLoading(false);
           form.reset({ url: "" });
           onSuccess?.();
-        } catch (error) {
-          useFeedsStore.setState({
-            error:
-              error instanceof Error ? error.message : "Failed to update feed",
-            isLoading: false,
-          });
+          setSuccess(null);
+        } else {
+          setError(storeError || "Failed to update feed.");
         }
       } else {
         const newFeed = await addFeed(values.url);
         const storeError = useFeedsStore.getState().error;
+
         if (newFeed && !storeError) {
-          console.log(" onSubmit newFeed:", newFeed);
           setSuccess(`Successfully added "${newFeed.title}"`);
           setError(null);
           setIsLoading(false);
