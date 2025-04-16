@@ -28,6 +28,7 @@ export interface RSSItem {
 
 export interface Feed extends RSSFeed {
   id: string;
+  feedUrl: string;
   lastUpdated: Date;
   unreadCount: number;
 }

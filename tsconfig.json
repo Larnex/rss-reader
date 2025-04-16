@@ -18,6 +18,8 @@
         "name": "next"
       }
     ],
+    // inform TypeScript to include the type definitions from @testing-library/jest-dom
+    "types": ["@testing-library/jest-dom"],
     "paths": {
       "@/*": ["./src/*"]
     }
