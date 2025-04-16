@@ -26,6 +26,10 @@ import { FeedsList } from "../feed/feed-list";
 import { Feed } from "@/types/rss";
 import { FeedForm } from "../feed/feed-form";
 import { Button } from "../ui/button";
+import { useArticlesStore } from "@/stores/articles-store";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { ROUTES } from "../../config/routes";
 
 const NAV_ITEMS = [
   { icon: HomeIcon, label: "All Articles", active: true },
@@ -107,18 +111,52 @@ interface MainNavigationProps {
 }
 
 function MainNavigation({ items }: MainNavigationProps) {
+  const {
+    getArticlesLength,
+    getFavoritesCount,
+    getUnreadCount,
+    getReadLaterCount,
+  } = useArticlesStore();
+
+  const pathname = usePathname();
+
+  const labelToRouteKey: Record<string, keyof typeof ROUTES> = {
+    "All Articles": "home",
+    Unread: "unread",
+    Favorites: "favorites",
+    "Read Later": "readLater",
+  };
+
   return (
     <SidebarMenu>
-      {items.map((item) => (
-        <SidebarMenuButton
-          key={item.label}
-          isActive={item.active}
-          tooltip={item.label}
-        >
-          <item.icon />
-          <span>{item.label}</span>
-        </SidebarMenuButton>
-      ))}
+      {items.map((item) => {
+        const routeKey = labelToRouteKey[item.label];
+        const route = ROUTES[routeKey];
+
+        return (
+          <Link href={route} key={item.label} passHref>
+            <SidebarMenuButton
+              key={item.label}
+              isActive={pathname === route}
+              tooltip={item.label}
+            >
+              <item.icon />
+              <div className="flex items-center justify-between w-full">
+                <span>{item.label}</span>
+                <span className="ml-auto text-xs bg-primary/10 text-primary py-0.5 px-2 rounded-full">
+                  {item.label === "All Articles"
+                    ? getArticlesLength()
+                    : item.label === "Unread"
+                    ? getUnreadCount()
+                    : item.label === "Favorites"
+                    ? getFavoritesCount()
+                    : getReadLaterCount()}
+                </span>
+              </div>
+            </SidebarMenuButton>
+          </Link>
+        );
+      })}
     </SidebarMenu>
   );
 }

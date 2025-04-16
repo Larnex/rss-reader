@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Feed } from "@/types/rss";
 import { createFeed, defaultFeeds, fetchFeed } from "@/lib/feed-helpers";
+import { useArticlesStore } from "./articles-store";
 
 // Type definitions for our feed store
 interface FeedsState {
@@ -16,6 +17,8 @@ interface FeedsState {
   refreshFeed: (id: string) => Promise<void>;
   refreshAllFeeds: () => Promise<void>;
 
+  updateFeedUnreadCount: (feedId: string) => void;
+  updateAllFeedUnreadCounts: () => void;
   // Feed setup
   resetToDefaults: () => void;
 }
@@ -34,19 +37,17 @@ export const useFeedsStore = create<FeedsState>()(
         set({ isLoading: true, error: null });
 
         try {
-          const { feed: rssFeed } = await fetchFeed(url);
-
           // Check if feed with this URL already exists
-          const existingFeed = get().feeds.find(
-            (feed) => feed.link === rssFeed.link
-          );
+          const existingFeed = get().feeds.find((feed) => feed.feedUrl === url);
           if (existingFeed) {
             set({
               isLoading: false,
-              error: `Feed "${rssFeed.title}" is already in your list`,
+              error: `Feed "${existingFeed.title}" is already in your list`,
             });
             return null;
           }
+
+          const { feed: rssFeed } = await fetchFeed(url);
           const newFeed = createFeed(rssFeed, url);
 
           // Add it to our feeds list
@@ -54,6 +55,10 @@ export const useFeedsStore = create<FeedsState>()(
             feeds: [...state.feeds, newFeed],
             isLoading: false,
           }));
+
+          useArticlesStore
+            .getState()
+            .addArticlesFromFeed(newFeed.id, rssFeed.items);
 
           return newFeed;
         } catch (error) {
@@ -90,7 +95,7 @@ export const useFeedsStore = create<FeedsState>()(
 
           if (duplicateFeed) {
             set({
-              error: `Feed "${feedData.title}" already exists.`,
+              error: `Feed "${duplicateFeed.title}" already exists.`,
               isLoading: false,
             });
             return;
@@ -98,7 +103,6 @@ export const useFeedsStore = create<FeedsState>()(
 
           try {
             const { feed: rssFeed } = await fetchFeed(newUrl);
-            console.log(" updateFeed: rssFeed:", rssFeed);
 
             set((state) => ({
               feeds: state.feeds.map((feed) =>
@@ -120,6 +124,8 @@ export const useFeedsStore = create<FeedsState>()(
               isLoading: false,
               error: null, // Clear error on success
             }));
+
+            useArticlesStore.getState().addArticlesFromFeed(id, rssFeed.items);
           } catch (error) {
             set({
               error:
@@ -145,6 +151,7 @@ export const useFeedsStore = create<FeedsState>()(
         set((state) => ({
           feeds: state.feeds.filter((feed) => feed.id !== id),
         }));
+        useArticlesStore.getState().removeArticlesFromFeed(id);
       },
 
       // Refresh a specific feed
@@ -159,6 +166,10 @@ export const useFeedsStore = create<FeedsState>()(
         try {
           const { feed: rssFeed } = await fetchFeed(feedToRefresh.feedUrl);
 
+          useArticlesStore.getState().addArticlesFromFeed(id, rssFeed.items);
+
+          const unreadCount = useArticlesStore.getState().getUnreadCount();
+
           // Update the feed with new data
           set((state) => ({
             feeds: state.feeds.map((feed) =>
@@ -167,7 +178,7 @@ export const useFeedsStore = create<FeedsState>()(
                     ...feed,
                     ...rssFeed,
                     lastUpdated: new Date(),
-                    // We'll handle unreadCount in a more sophisticated way when we implement articles
+                    unreadCount,
                   }
                 : feed
             ),
@@ -203,14 +214,35 @@ export const useFeedsStore = create<FeedsState>()(
         }
       },
 
+      // Update unread count for a specific feed
+      updateFeedUnreadCount: (feedId: string) => {
+        const unreadCount = useArticlesStore.getState().getUnreadCount();
+
+        set((state) => ({
+          feeds: state.feeds.map((feed) =>
+            feed.id === feedId ? { ...feed, unreadCount } : feed
+          ),
+        }));
+      },
+
+      // Update unread counts for all feeds
+      updateAllFeedUnreadCounts: () => {
+        set((state) => ({
+          feeds: state.feeds.map((feed) => ({
+            ...feed,
+            unreadCount: useArticlesStore.getState().getUnreadCount(),
+          })),
+        }));
+      },
+
       // Reset to default feeds
       resetToDefaults: async () => {
         set({ feeds: [], isLoading: true, error: null });
 
         try {
           // Add each default feed
-          for (const feedInfo of defaultFeeds) {
-            await get().addFeed(feedInfo.url);
+          for (const url of defaultFeeds) {
+            await get().addFeed(url);
           }
 
           set({ isLoading: false });
