@@ -1,4 +1,5 @@
 import { Article, RSSItem } from "@/types/rss";
+import { generateId } from "./feed-helpers";
 
 export function extractImageUrl(article: RSSItem): string | undefined {
   if (article["content:encoded"] ?? article.content) {
@@ -36,4 +37,66 @@ export function articleMatchesSearch(
   if (article.title?.toLowerCase().includes(query)) return true;
 
   return false;
+}
+
+export function transformRSSItemToArticle(
+  article: RSSItem,
+  feedId: string,
+  existingArticle?: Article
+): Article {
+  if (existingArticle) {
+    return {
+      ...existingArticle,
+      title: article.title,
+      description: article.description,
+      pubDate: article.pubDate,
+      content: article.content,
+      contentSnippet: article.contentSnippet,
+      "content:encoded": article["content:encoded"],
+      "content:encodedSnippet": article["content:encodedSnippet"],
+      author: article.creator,
+      categories: article.categories,
+      guid: article.guid,
+      isoDate: article.isoDate,
+    };
+  }
+
+  return {
+    id: generateId(),
+    feedId,
+    title: article.title,
+    link: article.link,
+    description: article.description,
+    pubDate: article.pubDate,
+    content: article.content,
+    contentSnippet: article.contentSnippet,
+    "content:encoded": article["content:encoded"],
+    "content:encodedSnippet": article["content:encodedSnippet"],
+    author: article.creator,
+    categories: article.categories,
+    guid: article.guid,
+    isoDate: article.isoDate,
+    readLater: false,
+    read: false,
+    favorite: false,
+    imageUrl: extractImageUrl(article),
+  };
+}
+
+export function processHtml(html: string | undefined): string | undefined {
+  if (!html) return undefined;
+
+  const doc = new DOMParser().parseFromString(html, "text/html");
+
+  const links = doc.querySelectorAll("a");
+
+  links.forEach((link) => {
+    link.setAttribute("target", "_blank");
+    link.setAttribute("rel", "noopener noreferrer"); // Security best practice
+  });
+
+  const svgsToRemove = doc.querySelectorAll('svg[fill="none"]');
+  svgsToRemove.forEach((svg) => svg.remove());
+
+  return doc.body.innerHTML;
 }

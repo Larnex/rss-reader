@@ -6,20 +6,29 @@ import { useArticlesStore } from "@/stores/articles-store";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import noImage from "../../../public/no-image.jpg";
-
+import { useRouter } from "next/navigation";
 interface ArticleCardProps {
   article: Article;
 }
 
 export function ArticleCard({ article }: ArticleCardProps) {
+  const router = useRouter();
   const { toggleFavorite, toggleReadLater, markAsRead } = useArticlesStore();
 
   const handleArticleClick = () => {
-    if (!article.read) {
+    if (!article.read && !article["content:encoded"]) {
       markAsRead(article.id, true);
     }
-    // Open article in new tab
-    window.open(article.link, "_blank");
+
+    if (
+      article["content:encoded"] &&
+      article["content:encoded"].length > 1000
+    ) {
+      router.push(`/article/${article.id}`);
+    } else {
+      // Article has only a link, open in new tab
+      window.open(article.link, "_blank");
+    }
   };
 
   const publishedDate = article.isoDate || article.pubDate;
@@ -61,7 +70,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
             </div>
           )}
 
-          <p className="text-xs text-muted-foreground line-clamp-5">
+          <p className="text-xs text-muted-foreground line-clamp-4">
             {article.contentSnippet || article.description}
           </p>
         </div>
