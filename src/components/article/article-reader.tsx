@@ -45,16 +45,9 @@ export function ArticleReader({ article }: ArticleReaderProps) {
         description: `You've finished reading "${article.title}"`,
         position: "bottom-right",
         duration: 5000,
-        action: {
-          label: "Undo",
-          onClick: () => {
-            markAsRead(article.id, false);
-            toast.success("Article marked as unread");
-          },
-        },
       });
     }
-  }, [progress, article.id, article.read, markAsRead]);
+  }, [progress, article.id, article.read, article.title, markAsRead]);
 
   if (!content) {
     return (
