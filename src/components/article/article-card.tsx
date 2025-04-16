@@ -1,10 +1,15 @@
 "use client";
 
 import { Article } from "@/types/rss";
-import { BookmarkIcon, CalendarIcon, StarIcon } from "lucide-react";
+import {
+  BookmarkIcon,
+  CalendarIcon,
+  ExternalLinkIcon,
+  StarIcon,
+} from "lucide-react";
 import { useArticlesStore } from "@/stores/articles-store";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
+import { formatDate } from "@/lib/article-helpers";
 import noImage from "../../../public/no-image.jpg";
 import { useRouter } from "next/navigation";
 interface ArticleCardProps {
@@ -15,26 +20,25 @@ export function ArticleCard({ article }: ArticleCardProps) {
   const router = useRouter();
   const { toggleFavorite, toggleReadLater, markAsRead } = useArticlesStore();
 
+  const hasFullContent: boolean = article["content:encoded"]
+    ? article["content:encoded"].length > 1000
+    : false;
+
+  const publishedDate = article.isoDate || article.pubDate;
+  const formattedDate = publishedDate ? formatDate(publishedDate) : "";
+
   const handleArticleClick = () => {
-    if (!article.read && !article["content:encoded"]) {
+    if (!article.read && !hasFullContent) {
       markAsRead(article.id, true);
     }
 
-    if (
-      article["content:encoded"] &&
-      article["content:encoded"].length > 1000
-    ) {
+    if (hasFullContent) {
       router.push(`/article/${article.id}`);
     } else {
       // Article has only a link, open in new tab
       window.open(article.link, "_blank");
     }
   };
-
-  const publishedDate = article.isoDate || article.pubDate;
-  const formattedDate = publishedDate
-    ? formatDistanceToNow(new Date(publishedDate), { addSuffix: true })
-    : "";
 
   return (
     <div
@@ -50,12 +54,19 @@ export function ArticleCard({ article }: ArticleCardProps) {
             alt={article.title}
             className="transition-opacity object-cover fill-contain h-full w-full"
           />
+          {!hasFullContent && (
+            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white">
+              <ExternalLinkIcon size={24} className="mb-1" />
+              <span className="text-xs font-medium">Opens in browser</span>
+            </div>
+          )}
         </div>
         <div className="flex flex-col flex-1 p-4">
           <ArticleHeader
             title={article.title}
             isRead={article.read}
             onClick={handleArticleClick}
+            hasFullContent={hasFullContent}
           />
 
           <div className="flex items-center text-xs text-muted-foreground mb-2">
@@ -89,21 +100,34 @@ function ArticleHeader({
   title,
   isRead,
   onClick,
+  hasFullContent,
 }: {
   title: string;
   isRead: boolean;
   onClick: () => void;
+  hasFullContent: boolean;
 }) {
   return (
-    <h3
-      className={cn(
-        "line-clamp-2 font-medium text-sm mb-1 cursor-pointer hover:underline",
-        isRead ? "text-muted-foreground" : "text-foreground"
-      )}
+    <div
+      className="flex items-center justify-between"
       onClick={onClick}
+      style={{ cursor: hasFullContent ? "pointer" : "default" }}
     >
-      {title}
-    </h3>
+      <h3
+        className={cn(
+          "line-clamp-2 font-medium text-sm mb-1 cursor-pointer hover:underline",
+          isRead ? "text-muted-foreground" : "text-foreground"
+        )}
+      >
+        {title}
+      </h3>
+      {!hasFullContent && (
+        <ExternalLinkIcon
+          size={14}
+          className="text-muted-foreground flex-shrink-0 ml-1 mt-1"
+        />
+      )}
+    </div>
   );
 }
 

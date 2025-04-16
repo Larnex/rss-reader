@@ -1,5 +1,6 @@
 import { Article, RSSItem } from "@/types/rss";
 import { generateId } from "./feed-helpers";
+import { formatDistanceToNow } from "date-fns";
 
 export function extractImageUrl(article: RSSItem): string | undefined {
   if (article["content:encoded"] ?? article.content) {
@@ -99,4 +100,8 @@ export function processHtml(html: string | undefined): string | undefined {
   svgsToRemove.forEach((svg) => svg.remove());
 
   return doc.body.innerHTML;
+}
+
+export function formatDate(date: string): string {
+  return formatDistanceToNow(new Date(date), { addSuffix: true });
 }
