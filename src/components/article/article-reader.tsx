@@ -5,6 +5,7 @@ import { useArticlesStore } from "@/stores/articles-store";
 import { useScrollProgress } from "@/hooks/use-scroll-progress";
 import { ArticleContent } from "./article-content";
 import ArticleProgress from "./article-progress";
+import { toast } from "sonner";
 
 interface ArticleReaderProps {
   article: Article;
@@ -40,6 +41,18 @@ export function ArticleReader({ article }: ArticleReaderProps) {
   useEffect(() => {
     if (progress >= 0.9 && !article.read) {
       markAsRead(article.id);
+      toast("Article marked as read", {
+        description: `You've finished reading "${article.title}"`,
+        position: "bottom-right",
+        duration: 5000,
+        action: {
+          label: "Undo",
+          onClick: () => {
+            markAsRead(article.id, false);
+            toast.success("Article marked as unread");
+          },
+        },
+      });
     }
   }, [progress, article.id, article.read, markAsRead]);
 
