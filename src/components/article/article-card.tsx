@@ -4,6 +4,8 @@ import { Article } from "@/types/rss";
 import {
   BookmarkIcon,
   CalendarIcon,
+  BookOpenCheck,
+  BookOpen,
   ExternalLinkIcon,
   StarIcon,
 } from "lucide-react";
@@ -40,11 +42,16 @@ export function ArticleCard({ article }: ArticleCardProps) {
     }
   };
 
+  const handleReadToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    markAsRead(article.id, !article.read);
+  };
+
   return (
     <div
       className={cn(
         "flex-col h-96 w-full rounded-lg border shadow-sm overflow-hidden transition-all hover:shadow-md flex",
-        article.read ? "bg-muted/40" : "bg-card"
+        article.read ? "bg-muted/80" : "bg-card"
       )}
     >
       <div className="flex flex-col flex-1">
@@ -64,6 +71,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
         <div className="flex flex-col flex-1 p-4">
           <ArticleHeader
             title={article.title}
+            author={article.author}
             isRead={article.read}
             onClick={handleArticleClick}
             hasFullContent={hasFullContent}
@@ -73,13 +81,6 @@ export function ArticleCard({ article }: ArticleCardProps) {
             <CalendarIcon size={12} className="mr-1" />
             <span>{formattedDate}</span>
           </div>
-
-          {article.author && (
-            <div className="flex items-center text-xs text-muted-foreground mb-2">
-              <span className="mr-1">By</span>
-              <span className="font-medium">{article.author}</span>
-            </div>
-          )}
 
           <p className="text-xs text-muted-foreground line-clamp-4">
             {article.contentSnippet || article.description}
@@ -91,6 +92,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
         article={article}
         onToggleFavorite={() => toggleFavorite(article.id)}
         onToggleReadLater={() => toggleReadLater(article.id)}
+        onToggleRead={handleReadToggle}
       />
     </div>
   );
@@ -98,18 +100,20 @@ export function ArticleCard({ article }: ArticleCardProps) {
 
 function ArticleHeader({
   title,
+  author,
   isRead,
   onClick,
   hasFullContent,
 }: {
   title: string;
+  author?: string;
   isRead: boolean;
   onClick: () => void;
   hasFullContent: boolean;
 }) {
   return (
     <div
-      className="flex items-center justify-between"
+      className="flex flex-col justify-between"
       onClick={onClick}
       style={{ cursor: hasFullContent ? "pointer" : "default" }}
     >
@@ -127,6 +131,13 @@ function ArticleHeader({
           className="text-muted-foreground flex-shrink-0 ml-1 mt-1"
         />
       )}
+
+      {author && (
+        <div className="flex text-xs text-muted-foreground mb-2">
+          <span className="mr-1">By</span>
+          <span className="font-medium">{author}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -135,10 +146,12 @@ function ArticleFooter({
   article,
   onToggleFavorite,
   onToggleReadLater,
+  onToggleRead,
 }: {
   article: Article;
   onToggleFavorite: () => void;
   onToggleReadLater: () => void;
+  onToggleRead: (e: React.MouseEvent) => void;
 }) {
   return (
     <div className="flex items-center justify-between px-4 py-2 border-t bg-muted/20">
@@ -153,6 +166,17 @@ function ArticleFooter({
           size={22}
           className={cn(article.readLater ? "fill-blue-500" : "")}
         />
+      </button>
+
+      <button
+        className={cn(
+          "p-1 rounded-full hover:bg-muted",
+          article.read ? "text-green-500" : "text-primary"
+        )}
+        onClick={onToggleRead}
+        title={article.read ? "Mark as unread" : "Mark as read"}
+      >
+        {article.read ? <BookOpenCheck size={22} /> : <BookOpen size={22} />}
       </button>
 
       <button

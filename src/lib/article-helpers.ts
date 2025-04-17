@@ -1,7 +1,6 @@
 import { Article, RSSItem } from "@/types/rss";
 import { generateId } from "./feed-helpers";
 import { formatDistanceToNow } from "date-fns";
-
 export function extractImageUrl(article: RSSItem): string | undefined {
   if (article["content:encoded"] ?? article.content) {
     const parser = new DOMParser();

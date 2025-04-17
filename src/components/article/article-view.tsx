@@ -1,7 +1,9 @@
+"use client";
+
 import React from "react";
 import { Article } from "@/types/rss";
 import { ArticleReader } from "./article-reader";
-
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 interface ArticleViewProps {
   article: Article;
   onClose?: () => void;
@@ -17,6 +19,7 @@ export function ArticleView({ article, onClose }: ArticleViewProps) {
         >
           <span className="mr-2">←</span> Back
         </button>
+        <ThemeToggle />
       </div>
 
       <div className="flex-1 overflow-auto">
