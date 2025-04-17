@@ -1,9 +1,9 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { Feed } from "@/types/rss";
 import { createFeed, defaultFeeds, fetchFeed } from "@/lib/feed-helpers";
 import { useArticlesStore } from "./articles-store";
-
+import localForage from "localforage";
 // Type definitions for our feed store
 interface FeedsState {
   feeds: Feed[];
@@ -259,6 +259,7 @@ export const useFeedsStore = create<FeedsState>()(
     }),
     {
       name: "rss-feeds-storage", // localStorage key
+      storage: createJSONStorage(() => localForage),
       onRehydrateStorage: () => (state) => {
         // If no feeds are stored, initialize with defaults
         if (!state || state.feeds.length === 0) {

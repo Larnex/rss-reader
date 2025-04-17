@@ -1,12 +1,13 @@
 /* eslint-disable max-lines-per-function */
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type { Article, RSSItem } from "@/types/rss";
 import {
   articleMatchesSearch,
   sortArticlesByDate,
   transformRSSItemToArticle,
 } from "@/lib/article-helpers";
+import localForage from "localforage";
 
 export type ArticleFilter = {
   feedId?: string;
@@ -195,6 +196,7 @@ export const useArticlesStore = create<ArticlesState>()(
     }),
     {
       name: "rss-reader-articles",
+      storage: createJSONStorage(() => localForage),
     }
   )
 );
