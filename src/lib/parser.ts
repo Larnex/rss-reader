@@ -12,7 +12,6 @@ const parser = new Parser<RSSFeed, RSSItem>({
 
 export async function parseFeedData(data: string): Promise<{
   feed: RSSFeed;
-  items: RSSItem[];
 }> {
   if (!data?.trim()) {
     throw new RSSParserError("Empty feed data provided");
@@ -34,7 +33,6 @@ export async function parseFeedData(data: string): Promise<{
         language: result.language,
         lastBuildDate: result.lastBuildDate,
       },
-      items: result.items,
     };
   } catch (error) {
     if (error instanceof RSSParserError) {
