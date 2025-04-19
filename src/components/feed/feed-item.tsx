@@ -1,11 +1,9 @@
 "use client";
 
-import { Feed } from "@/types/rss";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { PencilIcon, TrashIcon } from "lucide-react";
 import { useState } from "react";
-import { useFeedsStore } from "@/stores/feeds-store";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,18 +16,23 @@ import {
 } from "@/components/ui/alert-dialog";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-
+import { FeedSubscription } from "@/stores/user-preferences-store";
+import { useUserPreferencesStore } from "@/stores/user-preferences-store";
+import { useFeed } from "@/hooks/use-feed";
 interface FeedItemProps {
-  feed: Feed;
-  onEditAction: (feed: Feed) => void;
+  feed: FeedSubscription;
+  onEditAction: (feed: FeedSubscription) => void;
 }
 
 export function FeedItem({ feed, onEditAction }: FeedItemProps) {
-  const { removeFeed } = useFeedsStore();
+  const { removeFeed } = useUserPreferencesStore();
+  const { data } = useFeed(feed.id);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const pathname = usePathname();
   const isActive = pathname === `/feed/${feed.id}`;
+
+  const itemCount = data?.feed?.items?.length || 0;
 
   const handleDelete = () => {
     removeFeed(feed.id);
@@ -39,7 +42,7 @@ export function FeedItem({ feed, onEditAction }: FeedItemProps) {
   return (
     <div
       className={cn(
-        "group/menu-item relative p-2 flex rounded-md items-center",
+        "group/menu-item relative flex rounded-md items-center cursor-pointer",
         isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "",
         !isActive &&
           "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -47,16 +50,14 @@ export function FeedItem({ feed, onEditAction }: FeedItemProps) {
     >
       <Link
         href={`/feed/${feed.id}`}
-        className="cursor-pointer w-full flex-row items-center justify-between flex whitespace-nowrap overflow-hidden"
+        className="w-full h-full flex-row items-center justify-between flex whitespace-nowrap overflow-hidden p-2"
       >
         <span className="truncate text-sm">{feed.title}</span>
-      </Link>
 
-      {feed.items.length > 0 && (
         <div className="ml-auto flex relative">
           <span className="absolute right-0 opacity-100 group-hover/menu-item:opacity-0 transition-opacity duration-250">
             <span className="ml-auto text-xs bg-primary/10 text-primary py-0.5 px-2 rounded-full">
-              {feed.items.length}
+              {itemCount}
             </span>
           </span>
           <div className="opacity-0 group-hover/menu-item:opacity-100 transition-opacity duration-250 z-50 cursor-pointer">
@@ -66,7 +67,7 @@ export function FeedItem({ feed, onEditAction }: FeedItemProps) {
             />
           </div>
         </div>
-      )}
+      </Link>
 
       <DeleteConfirmDialog
         isOpen={showDeleteConfirm}
@@ -92,8 +93,7 @@ function FeedItemActions({
         variant="ghost"
         size="icon"
         className="h-6 w-6 cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation();
+        onClick={() => {
           onEditAction();
         }}
       >
@@ -103,8 +103,7 @@ function FeedItemActions({
         variant="ghost"
         size="icon"
         className="h-6 w-6 text-destructive cursor-pointer"
-        onClick={(e) => {
-          e.stopPropagation();
+        onClick={() => {
           onDeleteAction();
         }}
       >

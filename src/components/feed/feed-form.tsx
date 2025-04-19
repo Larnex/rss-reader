@@ -101,6 +101,24 @@ function FeedFormContent({
               </FormItem>
             )}
           />
+          {isEditMode && (
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Feed Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Custom title (optional)" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Customize the feed title (optional)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {/* Form status (error/success messages) */}
           <FormStatus error={error} success={success} />

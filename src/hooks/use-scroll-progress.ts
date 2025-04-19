@@ -30,7 +30,7 @@ export function useScrollProgress(containerRef?: RefObject<HTMLElement>) {
 
   useEffect(() => {
     // Apply throttle to the scroll handler
-    const throttledScrollHandler = throttle(updateScrollProgress, 100);
+    const throttledScrollHandler = throttle(updateScrollProgress, 10);
 
     const scrollElement = containerRef?.current || window;
     scrollElement.addEventListener("scroll", throttledScrollHandler);

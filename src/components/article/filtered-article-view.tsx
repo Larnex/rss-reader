@@ -1,10 +1,9 @@
 "use client";
 
-import { useArticlesStore, ArticleFilter } from "@/stores/articles-store";
 import { ArticleCard } from "./article-card";
-import { useFeedsStore } from "@/stores/feeds-store";
 import { useState } from "react";
 import { ArticleSearch } from "./article-search";
+import { ArticleFilter, useArticles, useFeed } from "@/hooks/use-feed";
 
 interface FilteredArticleViewProps {
   filter?: ArticleFilter;
@@ -16,30 +15,18 @@ export function FilteredArticleView({
   title,
 }: FilteredArticleViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const { getArticles } = useArticlesStore();
-  const { feeds, isLoading } = useFeedsStore();
 
-  const feed = filter?.feedId
-    ? feeds.find((f) => f.id === filter.feedId)
-    : undefined;
+  const feedQuery = useFeed(filter?.feedId);
 
   const mergedFilter = {
     ...filter,
     searchQuery: searchQuery.trim() ? searchQuery : undefined,
   };
 
-  const articles = getArticles(mergedFilter);
+  const { articles } = useArticles(mergedFilter);
 
   if (articles.length === 0 && !searchQuery) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full py-20">
-        <h2 className="text-xl font-semibold mb-2">No articles found</h2>
-        <p className="text-muted-foreground">
-          Try adding article to{" "}
-          {filter?.onlyReadLater ? "Read Later" : "Favorites"}
-        </p>
-      </div>
-    );
+    return <ArticleLoading filter={filter} />;
   }
 
   return (
@@ -53,23 +40,16 @@ export function FilteredArticleView({
             className="w-64"
           />
         </div>
-        {feed && (
+
+        {filter?.feedId && feedQuery.data && (
           <div className="mt-2 text-sm text-muted-foreground">
-            <p>{feed.description}</p>
+            <p>{feedQuery.data.feed.description}</p>
             <p className="mt-1">
               {articles.length} article{articles.length !== 1 ? "s" : ""}
             </p>
           </div>
         )}
       </div>
-
-      {isLoading && (
-        <div className="flex justify-center py-4">
-          <div className="animate-pulse text-muted-foreground">
-            Refreshing feeds...
-          </div>
-        </div>
-      )}
 
       {articles.length === 0 && searchQuery ? (
         <div className="flex flex-col items-center justify-center py-20">
@@ -85,6 +65,23 @@ export function FilteredArticleView({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function ArticleLoading({ filter }: { filter?: ArticleFilter }) {
+  return (
+    <div className="flex flex-col items-center justify-center h-full py-20">
+      <h2 className="text-xl font-semibold mb-2">No articles found</h2>
+      <p className="text-muted-foreground">
+        {filter?.onlyReadLater
+          ? "Try adding articles to Read Later"
+          : filter?.onlyFavorites
+          ? "Try adding articles to Favorites"
+          : filter?.onlyUnread
+          ? "All articles have been read"
+          : "Try subscribing to more feeds"}
+      </p>
     </div>
   );
 }

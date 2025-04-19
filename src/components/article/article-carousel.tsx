@@ -1,26 +1,26 @@
 "use client";
 
-import { Feed } from "@/types/rss";
+import { Article } from "@/types/rss";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
 import { ArticleCard } from "./article-card";
-import { useArticlesStore } from "@/stores/articles-store";
-import { useMemo } from "react";
+import { useArticles } from "@/hooks/use-feed";
+
+interface FeedWithArticles {
+  id: string;
+  title: string;
+  items: Article[];
+}
 
 interface ArticleCarouselProps {
-  feed: Feed;
+  feed: FeedWithArticles;
 }
 
 export function ArticleCarousel({ feed }: ArticleCarouselProps) {
-  const allArticles = useArticlesStore((state) => state.articles);
-
-  // Memoize the filtered articles to prevent infinite loops
-  const articles = useMemo(() => {
-    return allArticles.filter((article) => article.feedId === feed.id);
-  }, [allArticles, feed.id]);
+  const { articles } = useArticles({ feedId: feed.id });
 
   if (articles.length === 0) {
     return null;

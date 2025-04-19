@@ -7,6 +7,7 @@ export const feedFormSchema = z.object({
     .refine((url) => url.trim() !== "", {
       message: "URL is required",
     }),
+  title: z.string().optional(),
 });
 
 export type FeedFormValues = z.infer<typeof feedFormSchema>;

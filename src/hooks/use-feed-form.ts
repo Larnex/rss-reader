@@ -1,12 +1,18 @@
-import { useState, useEffect } from "react";
+/* eslint-disable max-lines-per-function */
+import { useEffect } from "react";
 import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useFeedsStore } from "@/stores/feeds-store";
 import {
   feedFormSchema,
   type FeedFormValues,
 } from "@/lib/validations/feed-schema";
-import { Feed } from "@/types/rss";
+import {
+  FeedSubscription,
+  useUserPreferencesStore,
+} from "@/stores/user-preferences-store";
+import { queryClient } from "../lib/query-client";
+import { fetchFeed } from "./use-feed";
+import { useMutation } from "@tanstack/react-query";
 
 export type UseFeedFormReturn = {
   form: UseFormReturn<FeedFormValues>;
@@ -18,103 +24,100 @@ export type UseFeedFormReturn = {
 };
 
 export type UseFeedFormProps = {
-  feedToEdit: Feed | null;
+  feedToEdit: FeedSubscription | null;
   onSuccess?: () => void;
 };
 
-// eslint-disable-next-line max-lines-per-function
 export function useFeedForm({
   feedToEdit = null,
   onSuccess,
 }: UseFeedFormProps): UseFeedFormReturn {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-
   const isEditMode = !!feedToEdit;
-
-  const { addFeed, updateFeed } = useFeedsStore();
+  const { addFeed, removeFeed, updateFeedTitle, subscribedFeeds } =
+    useUserPreferencesStore();
 
   const form = useForm<FeedFormValues>({
     resolver: zodResolver(feedFormSchema),
     defaultValues: {
-      url: feedToEdit?.feedUrl || "",
+      url: feedToEdit?.url || "",
+      title: feedToEdit?.title || "",
     },
   });
 
   useEffect(() => {
-    setError(null);
-    setSuccess(null);
-    setIsLoading(false);
-    form.reset({ url: feedToEdit?.feedUrl || "" });
+    form.reset({ url: feedToEdit?.url || "", title: feedToEdit?.title || "" });
   }, [feedToEdit, form]);
 
-  useEffect(() => {
-    const unsubscribe = useFeedsStore.subscribe((state, prevState) => {
-      if (state.error && state.error !== prevState.error) {
-        setError(state.error);
-        setSuccess(null);
+  const titleUpdateMutation = useMutation({
+    mutationFn: ({ id, title }: { id: string; title: string }) => {
+      updateFeedTitle(id, title);
+      return Promise.resolve(`Successfully updated feed title`);
+    },
+    onSuccess: () => {
+      onSuccess?.();
+    },
+  });
+
+  const feedMutation = useMutation({
+    mutationFn: async ({
+      url,
+      existingId,
+    }: {
+      url: string;
+      existingId?: string;
+    }) => {
+      const duplicateFeed = subscribedFeeds.find(
+        (feed) => feed.url === url && feed.id !== existingId
+      );
+
+      if (duplicateFeed) {
+        throw new Error(
+          `Feed with URL "${url}" already exists as "${duplicateFeed.title}"`
+        );
       }
 
-      if (!state.error && prevState.error) {
-        setError(null);
-      }
+      const feedData = await fetchFeed(url);
 
-      if (state.isLoading !== prevState.isLoading) {
-        setIsLoading(state.isLoading);
+      if (existingId) {
+        removeFeed(existingId);
+        addFeed(url, feedData.feed.title);
+        queryClient.invalidateQueries({ queryKey: ["feed", existingId] });
+        return `Successfully updated "${feedData.feed.title}"`;
+      } else {
+        const newFeedId = addFeed(url, feedData.feed.title);
+        queryClient.prefetchQuery({
+          queryKey: ["feed", newFeedId],
+          queryFn: () => Promise.resolve(feedData),
+        });
+        return `Successfully added "${feedData.feed.title}"`;
       }
-    });
-    return unsubscribe;
-  }, []);
+    },
+    onSuccess: () => {
+      form.reset({ url: "", title: "" });
+      onSuccess?.();
+    },
+  });
 
   const onSubmit = async (values: FeedFormValues) => {
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    useFeedsStore.setState({ error: null });
-
-    try {
-      if (isEditMode && feedToEdit) {
-        await updateFeed(feedToEdit.id, {
-          feedUrl: values.url,
+    if (isEditMode && feedToEdit) {
+      if (values.url === feedToEdit.url && values.title !== feedToEdit.title) {
+        titleUpdateMutation.mutate({
+          id: feedToEdit.id,
+          title: values.title || "",
         });
-        const storeError = useFeedsStore.getState().error;
-
-        if (!storeError) {
-          setSuccess(`Successfully updated "${feedToEdit.title}"`);
-          setError(null);
-          setIsLoading(false);
-          form.reset({ url: "" });
-          onSuccess?.();
-          setSuccess(null);
-        } else {
-          setError(storeError || "Failed to update feed.");
-        }
-      } else {
-        const newFeed = await addFeed(values.url);
-        const storeError = useFeedsStore.getState().error;
-
-        if (newFeed && !storeError) {
-          setSuccess(`Successfully added "${newFeed.title}"`);
-          setError(null);
-          setIsLoading(false);
-          form.reset({ url: "" });
-          onSuccess?.();
-        } else {
-          setError(storeError || "Failed to add feed.");
-        }
+        return;
       }
-    } catch (error) {
-      console.error("Unexpected error during form submission:", error);
-      setError(
-        error instanceof Error ? error.message : "An unexpected error occurred"
-      );
-      setSuccess(null);
-    } finally {
-      setIsLoading(false);
+
+      feedMutation.mutate({ url: values.url, existingId: feedToEdit.id });
+    } else {
+      feedMutation.mutate({ url: values.url });
     }
   };
+
+  const isLoading = titleUpdateMutation.isPending || feedMutation.isPending;
+  const error =
+    titleUpdateMutation.error?.message || feedMutation.error?.message || null;
+  const success = titleUpdateMutation.data || feedMutation.data || null;
 
   return {
     form,
