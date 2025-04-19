@@ -9,18 +9,26 @@ import {
   ExternalLinkIcon,
   StarIcon,
 } from "lucide-react";
-import { useArticlesStore } from "@/stores/articles-store";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/article-helpers";
 import noImage from "../../../public/no-image.jpg";
 import { useRouter } from "next/navigation";
+import { useUserPreferencesStore } from "@/stores/user-preferences-store";
 interface ArticleCardProps {
   article: Article;
 }
 
+// eslint-disable-next-line max-lines-per-function
 export function ArticleCard({ article }: ArticleCardProps) {
   const router = useRouter();
-  const { toggleFavorite, toggleReadLater, markAsRead } = useArticlesStore();
+  const { updateArticleStatus, articlePreferences } = useUserPreferencesStore();
+
+  const articleId = article.guid || article.link;
+  const userPrefs = articlePreferences[articleId] || {
+    read: false,
+    favorite: false,
+    readLater: false,
+  };
 
   const hasFullContent: boolean = article["content:encoded"]
     ? article["content:encoded"].length > 1000
@@ -30,12 +38,13 @@ export function ArticleCard({ article }: ArticleCardProps) {
   const formattedDate = publishedDate ? formatDate(publishedDate) : "";
 
   const handleArticleClick = () => {
-    if (!article.read && !hasFullContent) {
-      markAsRead(article.id, true);
+    if (!userPrefs.read && !hasFullContent) {
+      updateArticleStatus(articleId, { read: true });
     }
 
     if (hasFullContent) {
-      router.push(`/article/${article.id}`);
+      const encodedId = encodeURIComponent(article.id ?? articleId);
+      router.push(`/article/${encodedId}`);
     } else {
       // Article has only a link, open in new tab
       window.open(article.link, "_blank");
@@ -44,14 +53,21 @@ export function ArticleCard({ article }: ArticleCardProps) {
 
   const handleReadToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    markAsRead(article.id, !article.read);
+    updateArticleStatus(articleId, { read: !userPrefs.read });
+  };
+
+  const articleWithPrefs = {
+    ...article,
+    read: userPrefs.read,
+    favorite: userPrefs.favorite,
+    readLater: userPrefs.readLater,
   };
 
   return (
     <div
       className={cn(
         "flex-col h-96 w-full rounded-lg border shadow-sm overflow-hidden transition-all hover:shadow-md flex",
-        article.read ? "bg-muted/80" : "bg-card"
+        userPrefs.read ? "bg-muted/80" : "bg-card"
       )}
     >
       <div className="flex flex-col flex-1">
@@ -72,7 +88,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
           <ArticleHeader
             title={article.title}
             author={article.author}
-            isRead={article.read}
+            isRead={userPrefs.read}
             onClick={handleArticleClick}
             hasFullContent={hasFullContent}
           />
@@ -89,9 +105,13 @@ export function ArticleCard({ article }: ArticleCardProps) {
       </div>
 
       <ArticleFooter
-        article={article}
-        onToggleFavorite={() => toggleFavorite(article.id)}
-        onToggleReadLater={() => toggleReadLater(article.id)}
+        article={articleWithPrefs}
+        onToggleFavorite={() =>
+          updateArticleStatus(articleId, { favorite: !userPrefs.favorite })
+        }
+        onToggleReadLater={() =>
+          updateArticleStatus(articleId, { readLater: !userPrefs.readLater })
+        }
         onToggleRead={handleReadToggle}
       />
     </div>

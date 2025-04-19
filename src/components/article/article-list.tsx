@@ -1,31 +1,27 @@
 "use client";
 
-import { useFeedsStore } from "@/stores/feeds-store";
 import { ArticleCarousel } from "./article-carousel";
-import { useEffect, useState } from "react";
-import { useArticlesStore } from "../../stores/articles-store";
+import { useState } from "react";
 import { ArticleCard } from "./article-card";
 import { ArticleSearch } from "./article-search";
+import {
+  FeedSubscription,
+  useUserPreferencesStore,
+} from "@/stores/user-preferences-store";
+import { useAllFeeds, useArticles, useFeed } from "@/hooks/use-feed";
 
 export function ArticleList() {
-  const { feeds, refreshAllFeeds, isLoading } = useFeedsStore();
-  const { articles } = useArticlesStore();
+  const { subscribedFeeds } = useUserPreferencesStore();
+  const { isLoading } = useAllFeeds();
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    refreshAllFeeds();
-  }, [refreshAllFeeds]);
+  const { articles: searchResults } = useArticles(
+    searchQuery.trim() ? { searchQuery } : undefined
+  );
 
-  const filteredArticles = searchQuery
-    ? articles.filter((article) =>
-        article.title?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : [];
-
-  // If search is active, show filtered results
   const isSearchActive = searchQuery.trim().length > 0;
 
-  if (feeds.length === 0) {
+  if (subscribedFeeds.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full py-20">
         <h2 className="text-xl font-semibold mb-2">No feeds added yet</h2>
@@ -54,9 +50,9 @@ export function ArticleList() {
       {isSearchActive ? (
         <div className="px-8 sm:px-10 md:px-12">
           <h2 className="text-xl font-semibold mb-4">
-            Search Results ({filteredArticles.length})
+            Search Results ({searchResults.length})
           </h2>
-          {filteredArticles.length === 0 ? (
+          {searchResults.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
               <h3 className="text-lg font-semibold mb-2">No results found</h3>
               <p className="text-muted-foreground">
@@ -65,15 +61,60 @@ export function ArticleList() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredArticles.map((article) => (
+              {searchResults.map((article) => (
                 <ArticleCard key={article.id} article={article} />
               ))}
             </div>
           )}
         </div>
       ) : (
-        feeds.map((feed) => <ArticleCarousel key={feed.id} feed={feed} />)
+        <FeedCarousels feeds={subscribedFeeds} />
       )}
     </div>
   );
+}
+
+function FeedCarousels({ feeds }: { feeds: FeedSubscription[] }) {
+  return (
+    <>
+      {feeds.map((feed) => (
+        <FeedCarouselContainer key={feed.id} feedId={feed.id} />
+      ))}
+    </>
+  );
+}
+
+function FeedCarouselContainer({ feedId }: { feedId: string }) {
+  const { data, isLoading } = useFeed(feedId);
+
+  if (isLoading || !data) {
+    return (
+      <div className="px-8 sm:px-10 md:px-12 py-4">
+        <div className="h-6 w-48 bg-gray-200 animate-pulse rounded mb-4"></div>
+        <div className="flex space-x-4 overflow-x-auto">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              className="min-w-[300px] h-[360px] bg-gray-200 animate-pulse rounded"
+            ></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const feedTitle = data.feed.title;
+  const articles = data.feed.items;
+
+  if (articles.length === 0) {
+    return null;
+  }
+
+  const feedWithArticles = {
+    id: feedId,
+    title: feedTitle,
+    items: articles,
+  };
+
+  return <ArticleCarousel feed={feedWithArticles} />;
 }

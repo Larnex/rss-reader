@@ -1,11 +1,11 @@
 import React, { RefObject, useEffect, useRef } from "react";
 import { Article } from "@/types/rss";
 import { processHtml } from "@/lib/article-helpers";
-import { useArticlesStore } from "@/stores/articles-store";
 import { useScrollProgress } from "@/hooks/use-scroll-progress";
 import { ArticleContent } from "./article-content";
 import ArticleProgress from "./article-progress";
 import { toast } from "sonner";
+import { useUserPreferencesStore } from "@/stores/user-preferences-store";
 
 interface ArticleReaderProps {
   article: Article;
@@ -14,8 +14,10 @@ interface ArticleReaderProps {
 export function ArticleReader({ article }: ArticleReaderProps) {
   const content = article["content:encoded"] || article.content;
   const containerRef = useRef<HTMLDivElement>(null);
-  const { markAsRead } = useArticlesStore();
+  const { updateArticleStatus } = useUserPreferencesStore();
   const scrollableRef = useRef<HTMLDivElement>(null);
+  const isArticleRead = useRef(false);
+  const articleId = article.guid || article.link;
 
   useEffect(() => {
     if (containerRef.current) {
@@ -39,15 +41,16 @@ export function ArticleReader({ article }: ArticleReaderProps) {
   const progress = useScrollProgress(scrollableRef as RefObject<HTMLElement>);
 
   useEffect(() => {
-    if (progress >= 0.9 && !article.read) {
-      markAsRead(article.id);
+    if (progress >= 0.9 && !isArticleRead.current) {
+      updateArticleStatus(articleId, { read: true });
+      isArticleRead.current = true;
       toast("Article marked as read", {
         description: `You've finished reading "${article.title}"`,
         position: "bottom-right",
         duration: 5000,
       });
     }
-  }, [progress, article.id, article.read, article.title, markAsRead]);
+  }, [progress, articleId, article.title, updateArticleStatus]);
 
   if (!content) {
     return (
