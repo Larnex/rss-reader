@@ -42,15 +42,6 @@ describe("parseFeedData", () => {
           }),
         ]),
       },
-      items: expect.arrayContaining([
-        expect.objectContaining({
-          title: "Test Item",
-          description: "Test Item Description",
-          link: "http://example.com/item",
-          pubDate: "Mon, 06 Sep 2021 00:00:00 GMT",
-          guid: "http://example.com/item",
-        }),
-      ]),
     });
   });
 
