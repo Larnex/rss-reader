@@ -1,14 +1,14 @@
-import { Feed } from "@/types/rss";
 import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuSub,
 } from "@/components/ui/sidebar";
 import { FeedItem } from "./feed-item";
+import { FeedSubscription } from "@/stores/user-preferences-store";
 
 interface FeedsListProps {
-  feeds: Feed[];
-  onEditFeed: (feed: Feed) => void;
+  feeds: FeedSubscription[];
+  onEditFeed: (feed: FeedSubscription) => void;
 }
 
 export function FeedsList({ feeds, onEditFeed }: FeedsListProps) {
